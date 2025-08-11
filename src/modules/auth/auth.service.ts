@@ -1,10 +1,10 @@
 import * as bcrypt from 'bcrypt';
+import { User } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { ConflictException, Injectable } from '@nestjs/common';
 
 import { RegisterDto } from './dto/register.dto';
-import { PrismaService } from '../prisma/prisma.service';
-import { User } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {

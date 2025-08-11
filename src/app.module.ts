@@ -1,13 +1,10 @@
+import * as Joi from 'joi';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import * as Joi from 'joi';
 
-import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { AppController } from './app.controller';
-import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { RecipesModule } from './recipes/recipes.module';
+import { RecipesModule } from './modules/recipes/recipes.module';
+import { AuthModule, UsersModule } from './modules';
 
 @Module({
   imports: [
@@ -29,7 +26,5 @@ import { RecipesModule } from './recipes/recipes.module';
     UsersModule,
     PrismaModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
