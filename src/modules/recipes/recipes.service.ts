@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class RecipesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(data: Prisma.RecipeCreateInput) {
     return this.prisma.recipe.create({
@@ -19,16 +20,50 @@ export class RecipesService {
     });
   }
 
-  async findAll() {
-    return this.prisma.recipe.findMany({
-      include: {
-        steps: true,
-        ratings: true,
-        favorites: true,
-        ingredients: true,
-        createdBy: { select: { id: true, username: true, email: true } },
-      },
-    });
+  async findAll(params: {
+    skip?: number;
+    take?: number;
+    search?: string;
+    createdById?: string;
+  }) {
+    const { skip, take, search, createdById } = params;
+    const where: Prisma.RecipeWhereInput = {
+      AND: [
+        search
+          ? {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+                {
+                  ingredients: {
+                    some: { name: { contains: search, mode: 'insensitive' } },
+                  },
+                },
+              ],
+            }
+          : {},
+        createdById ? { createdById } : {},
+      ],
+    };
+
+    const [total, recipes] = await this.prisma.$transaction([
+      this.prisma.recipe.count({ where }),
+      this.prisma.recipe.findMany({
+        skip,
+        take,
+        where,
+        include: {
+          steps: true,
+          ratings: true,
+          favorites: true,
+          ingredients: true,
+          createdBy: { select: { id: true, username: true, email: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return { total, data: recipes };
   }
 
   async findById(id: string) {
