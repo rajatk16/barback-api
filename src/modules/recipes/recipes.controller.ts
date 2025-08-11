@@ -1,19 +1,20 @@
 import {
-  Body,
-  Controller,
-  Delete,
   Get,
+  Req,
+  Body,
+  Post,
   Param,
   Patch,
-  Post,
-  Req,
+  Query,
+  Delete,
   UseGuards,
+  Controller,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { JwtGuard } from '../../guards/jwt.guard';
 import { RecipesService } from './recipes.service';
 import { CreateRecipeDto } from './dto/CreateRecipe.dto';
-import { JwtGuard } from 'src/guards/jwt.guard';
 import { UpdateRecipeDto } from './dto/UpdateRecipe.dto';
 
 @Controller('recipes')
@@ -42,8 +43,18 @@ export class RecipesController {
   }
 
   @Get()
-  findAll() {
-    return this.recipesService.findAll();
+  findAll(
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+    @Query('search') search?: string,
+    @Query('createdById') createdById?: string,
+  ) {
+    return this.recipesService.findAll({
+      skip: skip ? parseInt(skip) : undefined,
+      take: take ? parseInt(take) : undefined,
+      search,
+      createdById,
+    });
   }
 
   @Get(':id')
