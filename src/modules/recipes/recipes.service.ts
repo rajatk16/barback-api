@@ -1,5 +1,9 @@
 import { Prisma } from '@prisma/client';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -85,7 +89,17 @@ export class RecipesService {
     return recipe;
   }
 
-  async update(id: string, data: Prisma.RecipeUpdateInput) {
+  async update(id: string, data: Prisma.RecipeUpdateInput, userId: string) {
+    const recipe = await this.prisma.recipe.findUnique({ where: { id } });
+
+    if (!recipe) {
+      throw new NotFoundException(`Recipe with id ${id} not found.`);
+    }
+
+    if (recipe.createdById !== userId) {
+      throw new ForbiddenException('You can only update your own recipes');
+    }
+
     return this.prisma.recipe.update({
       where: { id },
       data,
@@ -99,7 +113,17 @@ export class RecipesService {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: string, userId: string) {
+    const recipe = await this.prisma.recipe.findUnique({ where: { id } });
+
+    if (!recipe) {
+      throw new NotFoundException(`Recipe with id ${id} not found.`);
+    }
+
+    if (recipe.createdById !== userId) {
+      throw new ForbiddenException('You can only delete your own recipes');
+    }
+
     return this.prisma.$transaction(async (tx) => {
       // Delete related records first
       await tx.ingredient.deleteMany({ where: { recipeId: id } });
