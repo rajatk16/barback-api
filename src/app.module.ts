@@ -1,10 +1,14 @@
 import * as Joi from 'joi';
-import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 
+import { AuthModule, UsersModule } from './modules';
 import { PrismaModule } from './prisma/prisma.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
-import { AuthModule, UsersModule } from './modules';
+import { AppLoggerService } from './common/logger/logger.service';
+import { LoggingMiddleware } from './middlewares/logging.middleware';
+import { HttpExceptionFilter } from './common/exceptions/HttpExceptionFilter';
 
 @Module({
   imports: [
@@ -26,5 +30,16 @@ import { AuthModule, UsersModule } from './modules';
     UsersModule,
     PrismaModule,
   ],
+  providers: [
+    AppLoggerService,
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggingMiddleware).forRoutes('*');
+  }
+}
