@@ -10,6 +10,7 @@ import {
   UseGuards,
   Controller,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { JwtGuard } from '../../guards/jwt.guard';
@@ -23,7 +24,7 @@ export class RecipesController {
 
   @Post()
   @UseGuards(JwtGuard)
-  create(@Body() dto: CreateRecipeDto, @Req() req: { user: { id: string } }) {
+  create(@Body() dto: CreateRecipeDto, @Req() req: Request) {
     return this.recipesService.create({
       name: dto.name,
       description: dto.description,
@@ -64,11 +65,15 @@ export class RecipesController {
 
   @UseGuards(JwtGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateRecipeDto) {
+  update(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() dto: UpdateRecipeDto,
+  ) {
     const updateData: Prisma.RecipeUpdateInput = {
       name: dto.name,
-      description: dto.description,
       imageUrl: dto.imageUrl,
+      description: dto.description,
     };
 
     if (dto.ingredients) {
@@ -85,12 +90,12 @@ export class RecipesController {
       };
     }
 
-    return this.recipesService.update(id, updateData);
+    return this.recipesService.update(id, updateData, req.user.id);
   }
 
   @UseGuards(JwtGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.recipesService.delete(id);
+  remove(@Req() req: Request, @Param('id') id: string) {
+    return this.recipesService.delete(id, req.user.id);
   }
 }
